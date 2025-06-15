@@ -1,5 +1,5 @@
 import os as _os
-import src.scanner as _scanner
+import lib as _lib
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     if cpu_count := _os.cpu_count():
         max_workers = cpu_count * 2
 
-    _scanner.start(
+    _lib.start_scan(
         dir="/",
         config={
             "summarize": True,
