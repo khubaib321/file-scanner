@@ -1,2 +1,2 @@
 # File scanner [wip]
-Unearth the secrets buried deep in your file system.
+Unearth the secrets buried deep within your file system.
