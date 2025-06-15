@@ -1,7 +1,6 @@
 import os as _os
 import pathlib as _pathlib
 import json as _json
-from re import sub
 import threading as _threading
 import queue as _q
 from typing import Any
@@ -150,11 +149,13 @@ def start(*, dir: str, config: dict[str, Any]):
         scan_hidden_files=scan_hidden_files,
     )
 
-    print("✍️   Writing to file... ", end="", flush=True)
-    _os.makedirs("outputs", exist_ok=True)
-    with open("outputs/file_structure.json", "w") as fh:
-        _json.dump(scan_result, fh, indent=4)
-    print("✅")
+    if output_file := config.get("output_file_name"):
+        _os.makedirs("outputs", exist_ok=True)
+        output_file_path = f"outputs/{output_file}.json"
+        print(f"✍️   Writing to '{output_file_path}' ... ", end="", flush=True)
+        with open(output_file_path, "w") as fh:
+            _json.dump(scan_result, fh, indent=4)
+        print("✅")
 
     if config.get("summarize"):
         print("🔍   Summarizing... ", end="", flush=True)

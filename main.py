@@ -14,13 +14,14 @@ def main():
         # "node_modules",
     )
     _scanner.start(
-        dir="~",
+        dir="/",
         config={
             "summarize": True,
-            "max_workers": 12,
+            "max_workers": 16,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": True,
             "scan_hidden_files": True,
+            # "output_file_name": None,
         },
     )
 
