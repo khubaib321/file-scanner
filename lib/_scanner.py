@@ -58,10 +58,6 @@ class _CrewManager:
             
             path = params["path"]
             params["bucket"]["__files__"] = []
-            # ignore_dirs = params["ignore_dirs"]
-            # scan_hidden_dirs = params["scan_hidden_dirs"]
-            # scan_hidden_files = params["scan_hidden_files"]
-            # scan_file_extensions = params["scan_file_extensions"]
 
             try:
                 with _os.scandir(path) as it:
@@ -82,10 +78,6 @@ class _CrewManager:
                             work_q.put({
                                 "path": entry.path,
                                 "bucket": sub_bucket,
-                                # "ignore_dirs": self._ignore_dirs,
-                                # "scan_hidden_dirs": self._scan_hidden_dirs,
-                                # "scan_hidden_files": self._scan_hidden_files,
-                                # "scan_file_extensions": self._scan_file_extensions,
                             })
 
             except OSError as e:
@@ -99,10 +91,6 @@ class _CrewManager:
             {
                 "path": self._path,
                 "bucket": result_bucket,
-                # "ignore_dirs": self._ignore_dirs,
-                # "scan_hidden_dirs": self._scan_hidden_dirs,
-                # "scan_hidden_files": self._scan_hidden_files,
-                # "scan_file_extensions": self._scan_file_extensions,
             },
         )
         threads = [
