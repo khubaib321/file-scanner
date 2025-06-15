@@ -6,7 +6,7 @@ import threading as _threading
 
 from . import _helpers
 
-_MAX_WORKERS = 48
+_MAX_WORKERS = 32
 _IGNORE_DIRS = set()
 _SCAN_HIDDEN_DIRS = True
 _SCAN_HIDDEN_FILES = True
@@ -29,7 +29,7 @@ def _ignore_file(name: str, scan_hidden: bool, scan_file_extensions: set[str] | 
 
     extension_matched = False
     for ext in scan_file_extensions:
-        if name.endswith(ext):
+        if name.lower().endswith("." + ext.lower()):
             extension_matched = True
     
     return should_ignore or not extension_matched
@@ -54,6 +54,7 @@ class _CrewManager:
                 continue
 
             if not params["path"]:
+                work_q.task_done()
                 break
             
             path = params["path"]
@@ -182,9 +183,9 @@ class Scanner:
 
             print("-------------- Summary --------------")
             print("Scanned", str(self._root_path))
-            print(" - Hidden dirs:", "✅" * self._scan_hidden_dirs or "❌")
-            print(" - Hidden files:", "✅" * self._scan_hidden_files or "❌")
-            print(" - File extensions:", *self._scan_file_extensions or "All")
+            print(" - Hidden dirs:", "✅" if self._scan_hidden_dirs else "❌")
+            print(" - Hidden files:", "✅" if self._scan_hidden_files else "❌")
+            print(" - File extensions:", self._scan_file_extensions or "All")
             print(f"Workers: {self._max_workers}")
             print(f"Total dirs: {dirs_count:,}")
             print(f"Total files: {files_count:,}")

@@ -15,9 +15,9 @@ def main():
         # "node_modules",
     ])
     scan_file_extensions = set([
-        ".png",
-        ".jpg",
-        ".jpeg",
+        "png",
+        "jpg",
+        "jpeg",
     ])
 
     max_workers = 8
