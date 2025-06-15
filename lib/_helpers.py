@@ -10,8 +10,7 @@ def time_it() -> Callable:
     def decorator(func):
         @_ft.wraps(func)
         def wrapper(*args, **kwargs):
-            _args = ", ".join(f"'{str(a)}'" for a in args)
-            print(f"⏱️ {func.__name__}({_args}): ", end="", flush=True)
+            print(f"⏱️ {func.__name__}(): ", end="", flush=True)
 
             start_time = _time.time()
             result = func(*args, **kwargs)
