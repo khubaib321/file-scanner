@@ -25,7 +25,7 @@ def main():
         max_workers = cpu_count * 2
 
     scanner = _lib.Scanner(
-        dir="~",
+        directory="~",
         config={
             "summarize": True,
             "max_workers": max_workers,

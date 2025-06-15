@@ -113,8 +113,8 @@ class _CrewManager:
 
 
 class Scanner:
-    def __init__(self, dir: str, config: dict) -> None:
-        self._root_path = _pathlib.Path(dir).expanduser()
+    def __init__(self, directory: str, config: dict) -> None:
+        self._root_path = _pathlib.Path(directory).expanduser()
         self._scan_result: dict = {}
 
         self._gen_summary: bool = config.get("summarize", False)
