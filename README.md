@@ -1,2 +1,2 @@
-# File scanner
-Scan directories and discover hidden gems.
+# File scanner [wip]
+Unearth the secrets buried deep in your file system.
