@@ -181,14 +181,17 @@ class Scanner:
             errors, dirs_count, files_count = self._summarize()
             print("✅")
 
-            print("-------------- Summary --------------")
+            print("=============================================")
             print("Scanned", str(self._root_path))
             print(" - Hidden dirs:", "✅" if self._scan_hidden_dirs else "❌")
             print(" - Hidden files:", "✅" if self._scan_hidden_files else "❌")
+            print(" - Ignored dirs:", self._ignore_dirs or "None")
             print(" - File extensions:", self._scan_file_extensions or "All")
+            print("")
             print(f"Workers: {self._max_workers}")
             print(f"Total dirs: {dirs_count:,}")
             print(f"Total files: {files_count:,}")
             print(f"Failed scans: {errors:,}")
+            print("=============================================")
         
         print("✅ Scan complete.")
