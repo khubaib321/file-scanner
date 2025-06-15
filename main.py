@@ -3,7 +3,7 @@ import lib as _lib
 
 
 def main():
-    ignore_dirs = set(
+    ignore_dirs = set([
         # "tmp",
         # "bin", 
         # "sbin", 
@@ -13,7 +13,12 @@ def main():
         # "__pycache__",
         # "virtualenvs",
         # "node_modules",
-    )
+    ])
+    scan_file_extensions = set([
+        ".png",
+        ".jpg",
+        ".jpeg",
+    ])
 
     max_workers = 8
     if cpu_count := _os.cpu_count():
@@ -28,6 +33,7 @@ def main():
             "scan_hidden_dirs": False,
             "scan_hidden_files": False,
             "output_file_name": "files",
+            "scan_file_extensions": scan_file_extensions,
         },
     )
     scanner.start()

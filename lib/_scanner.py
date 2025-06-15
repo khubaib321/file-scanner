@@ -21,8 +21,18 @@ def _ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) 
     )
 
 
-def _ignore_file(name: str, scan_hidden: bool) -> bool:
-    return not scan_hidden and name.startswith(".")
+def _ignore_file(name: str, scan_hidden: bool, scan_file_extensions: set[str] | None) -> bool:
+    should_ignore = not scan_hidden and name.startswith(".")
+
+    if scan_file_extensions is None:
+        return should_ignore
+
+    extension_matched = False
+    for ext in scan_file_extensions:
+        if name.endswith(ext):
+            extension_matched = True
+    
+    return should_ignore or not extension_matched
 
 
 class _CrewManager:
@@ -34,6 +44,7 @@ class _CrewManager:
         self._ignore_dirs: set[str] = params["ignore_dirs"]
         self._scan_hidden_dirs: bool = params["scan_hidden_dirs"]
         self._scan_hidden_files: bool = params["scan_hidden_files"]
+        self._scan_file_extensions: set[str] | None = params["scan_file_extensions"]
     
     def _worker(self, work_q: _q.Queue):
         while True:
@@ -47,22 +58,23 @@ class _CrewManager:
             
             path = params["path"]
             params["bucket"]["__files__"] = []
-            ignore_dirs = params["ignore_dirs"]
-            scan_hidden_dirs = params["scan_hidden_dirs"]
-            scan_hidden_files = params["scan_hidden_files"]
+            # ignore_dirs = params["ignore_dirs"]
+            # scan_hidden_dirs = params["scan_hidden_dirs"]
+            # scan_hidden_files = params["scan_hidden_files"]
+            # scan_file_extensions = params["scan_file_extensions"]
 
             try:
                 with _os.scandir(path) as it:
                     for entry in it:
                         if (
                             entry.is_file(follow_symlinks=False)
-                            and not _ignore_file(entry.name, scan_hidden_files)
+                            and not _ignore_file(entry.name, self._scan_hidden_files, self._scan_file_extensions)
                         ):
                             params["bucket"]["__files__"].append(entry.name)
 
                         elif (
                             entry.is_dir(follow_symlinks=False)
-                            and not _ignore_dir(entry.path, entry.name, ignore_dirs, scan_hidden_dirs)
+                            and not _ignore_dir(entry.path, entry.name, self._ignore_dirs, self._scan_hidden_dirs)
                         ):
 
                             sub_bucket = {}
@@ -70,9 +82,10 @@ class _CrewManager:
                             work_q.put({
                                 "path": entry.path,
                                 "bucket": sub_bucket,
-                                "ignore_dirs": self._ignore_dirs,
-                                "scan_hidden_dirs": self._scan_hidden_dirs,
-                                "scan_hidden_files": self._scan_hidden_files,
+                                # "ignore_dirs": self._ignore_dirs,
+                                # "scan_hidden_dirs": self._scan_hidden_dirs,
+                                # "scan_hidden_files": self._scan_hidden_files,
+                                # "scan_file_extensions": self._scan_file_extensions,
                             })
 
             except OSError as e:
@@ -86,9 +99,10 @@ class _CrewManager:
             {
                 "path": self._path,
                 "bucket": result_bucket,
-                "ignore_dirs": self._ignore_dirs,
-                "scan_hidden_dirs": self._scan_hidden_dirs,
-                "scan_hidden_files": self._scan_hidden_files,
+                # "ignore_dirs": self._ignore_dirs,
+                # "scan_hidden_dirs": self._scan_hidden_dirs,
+                # "scan_hidden_files": self._scan_hidden_files,
+                # "scan_file_extensions": self._scan_file_extensions,
             },
         )
         threads = [
@@ -120,6 +134,7 @@ class Scanner:
         self._output_file_name: str | None = config.get("output_file_name", None)
         self._scan_hidden_dirs: bool = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
         self._scan_hidden_files: bool = config.get("scan_hidden_files", _SCAN_HIDDEN_FILES)
+        self._scan_file_extensions: set[str] | None = config.get("scan_file_extensions", None)
 
     @_helpers.time_it()
     def _scan_dir(self) -> None:
@@ -134,6 +149,7 @@ class Scanner:
                 "ignore_dirs": self._ignore_dirs,
                 "scan_hidden_dirs": self._scan_hidden_dirs,
                 "scan_hidden_files": self._scan_hidden_files,
+                "scan_file_extensions": self._scan_file_extensions
             }   
         )
 
@@ -180,6 +196,7 @@ class Scanner:
             print("Scanned", str(self._root_path))
             print(" - Hidden dirs:", "✅" * self._scan_hidden_dirs or "❌")
             print(" - Hidden files:", "✅" * self._scan_hidden_files or "❌")
+            print(" - File extensions:", *self._scan_file_extensions or "All")
             print(f"Workers: {self._max_workers}")
             print(f"Total dirs: {dirs_count:,}")
             print(f"Total files: {files_count:,}")
