@@ -4,15 +4,9 @@ import lib as _lib
 
 def main():
     ignore_dirs = set([
-        # "tmp",
-        # "bin", 
-        # "sbin", 
-        # "venv", 
-        # "dist",
-        # "Volumes",
-        # "__pycache__",
-        # "virtualenvs",
-        # "node_modules",
+        "credintials",
+        "_credintials",
+        "legacy_credentials",
     ])
     scan_file_extensions = set([
         "png",
