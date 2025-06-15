@@ -1,3 +1,4 @@
+import os as _os
 import src.scanner as _scanner
 
 
@@ -13,11 +14,16 @@ def main():
         # "virtualenvs",
         # "node_modules",
     )
+
+    max_workers = 8
+    if cpu_count := _os.cpu_count():
+        max_workers = cpu_count * 2
+
     _scanner.start(
         dir="/",
         config={
             "summarize": True,
-            "max_workers": 16,
+            "max_workers": max_workers,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": False,
             "scan_hidden_files": False,
