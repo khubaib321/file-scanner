@@ -1,7 +1,7 @@
 [project]
-name = "file-search"
+name = "file-scanner"
 version = "0.1.0"
-description = "Add your description here"
+description = "Scan a directory. Discover files and folders 🤯"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []

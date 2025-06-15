@@ -13,7 +13,7 @@ _SCAN_HIDDEN_DIRS = True
 _SCAN_HIDDEN_FILES = True
 
 
-def _should_ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) -> bool:
+def _ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) -> bool:
     return (
         name in ignore_dirs or 
         path in ignore_dirs or (
@@ -22,7 +22,7 @@ def _should_ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden:
     )
 
 
-def _should_ignore_file(name: str, scan_hidden: bool) -> bool:
+def _ignore_file(name: str, scan_hidden: bool) -> bool:
     return not scan_hidden and name.startswith(".")
 
 
@@ -47,13 +47,13 @@ def _worker(work_q: _q.Queue):
                 for entry in it:
                     if (
                         entry.is_file(follow_symlinks=False)
-                        and not _should_ignore_file(entry.name, scan_hidden_files)
+                        and not _ignore_file(entry.name, scan_hidden_files)
                     ):
                         params["bucket"]["__files__"].append(entry.name)
 
                     elif (
                         entry.is_dir(follow_symlinks=False)
-                        and not _should_ignore_dir(entry.path, entry.name, ignore_dirs, scan_hidden_dirs)
+                        and not _ignore_dir(entry.path, entry.name, ignore_dirs, scan_hidden_dirs)
                     ):
 
                         sub_bucket = {}
@@ -74,7 +74,7 @@ def _worker(work_q: _q.Queue):
 
 
 @_helpers.time_it()
-def _scan_directory(
+def _scan_dir(
     *, 
     root_dir: str, 
     max_workers: int, 
@@ -141,7 +141,7 @@ def start(*, dir: str, config: dict[str, Any]):
     scan_hidden_dirs = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
     scan_hidden_files = config.get("scan_hidden_files", _SCAN_HIDDEN_FILES)
     
-    scan_result = _scan_directory(
+    scan_result = _scan_dir(
         root_dir=root, 
         max_workers=max_workers,
         ignore_dirs=ignore_dirs,

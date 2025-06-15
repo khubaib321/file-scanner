@@ -19,8 +19,8 @@ def main():
             "summarize": True,
             "max_workers": 16,
             "ignore_dirs": ignore_dirs,
-            "scan_hidden_dirs": True,
-            "scan_hidden_files": True,
+            "scan_hidden_dirs": False,
+            "scan_hidden_files": False,
             # "output_file_name": None,
         },
     )
