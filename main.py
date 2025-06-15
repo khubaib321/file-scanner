@@ -19,17 +19,18 @@ def main():
     if cpu_count := _os.cpu_count():
         max_workers = cpu_count * 2
 
-    _lib.start_scan(
-        dir="/",
+    scanner = _lib.Scanner(
+        dir="~",
         config={
             "summarize": True,
             "max_workers": max_workers,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": False,
             "scan_hidden_files": False,
-            # "output_file_name": None,
+            "output_file_name": "files",
         },
     )
+    scanner.start()
 
 
 if __name__ == "__main__":
