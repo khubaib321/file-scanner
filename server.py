@@ -84,4 +84,5 @@ def scan_directory(config: ScanConfig) -> dict:
     }
 
 if __name__ == "__main__":
+    # mcp.run("streamable-http")
     _asyncio.run(mcp.run_http_async(transport="sse"))
