@@ -24,16 +24,24 @@ mcp = _fastmcp.FastMCP("File system")
 @mcp.tool
 def scan_directory(config: ScanConfig) -> dict:
     """
-    Scans a directory and its sub-directories and returns a dictionary 
-    containing directory names and file names inside the directory in the 
-    key "scan_result" and a quick summary count of directories, files and errors.
+    Scans a directory and all its sub-directories. 
+    Returns a dictionary containing directory names and file names inside the directory.
+    The directory contents are returned in the key "scan_result" and a quick summary count of directories, files and errors.
 
-    Sample response:
+    Returns: dict
+    {
+        "dir_count": int,
+        "file_count: int,
+        "error_count": int,
+        "scan_result": dict
+    }
+
+    Example return:
     {
         "dir_count": 2,
         "file_count: 4,
         "error_count": 0,
-        "scan_result: {
+        "scan_result": {
             "Pictures": {
                 "__files__": [
                     "IMG_0695.jpeg",
