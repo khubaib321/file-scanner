@@ -1,4 +1,3 @@
-import os as _os
 import lib as _lib
 
 
@@ -14,15 +13,11 @@ def main():
         "jpeg",
     ])
 
-    max_workers = 8
-    if cpu_count := _os.cpu_count():
-        max_workers = cpu_count * 2
-
     scanner = _lib.Scanner(
         directory="~",
         config={
             "summarize": True,
-            "max_workers": max_workers,
+            "max_workers": 16,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": True,
             "scan_hidden_files": True,

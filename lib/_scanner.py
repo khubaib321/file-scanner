@@ -124,6 +124,20 @@ class Scanner:
         self._scan_hidden_dirs: bool = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
         self._scan_hidden_files: bool = config.get("scan_hidden_files", _SCAN_HIDDEN_FILES)
         self._scan_file_extensions: set[str] | None = config.get("scan_file_extensions", None)
+    
+    @property
+    def result(self) -> dict:
+        return self._scan_result
+    
+    @property
+    def summary(self) -> dict:
+        error_count, dir_count, file_count = self._summarize()
+
+        return {
+            "dir_count": dir_count,
+            "file_count": file_count,
+            "error_count": error_count,
+        }
 
     @_helpers.time_it()
     def _scan_dir(self) -> None:
@@ -144,25 +158,25 @@ class Scanner:
 
         self._scan_result = crew_man.begin(out_bucket)
 
-    def _summarize(self, bucket: dict = {}) -> tuple[int, int, int]:
-        if not bucket:
+    def _summarize(self, bucket: dict | None = None) -> tuple[int, int, int]:
+        if bucket is None:
             bucket = self._scan_result
 
         if "__error__" in  bucket:
             return 1, 0, 0
 
-        error = 0
+        error_count = 0
         dir_count = len(bucket) - 1
         file_count = len(bucket["__files__"])
 
         for key, value in bucket.items():
             if key != "__files__":
                 ret = self._summarize(bucket=value)
-                error += ret[0]
                 dir_count += ret[1]
                 file_count += ret[2]
+                error_count += ret[0]
 
-        return error, dir_count, file_count
+        return error_count, dir_count, file_count
     
     def start(self):
         print("⏳ Scanning", str(self._root_path))
