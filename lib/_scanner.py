@@ -87,7 +87,8 @@ class _CrewManager:
             finally:
                 work_q.task_done()
     
-    def begin(self, result_bucket: dict) -> dict:
+    def begin_scan(self) -> dict:
+        result_bucket: dict = {}
         self._work_q.put(
             {
                 "path": self._path,
@@ -144,7 +145,6 @@ class Scanner:
         if not (self._root_path.exists() and self._root_path.is_dir()):
             return None
 
-        out_bucket: dict = {}
         crew_man = _CrewManager(
             params={
                 "path": str(self._root_path),
@@ -156,7 +156,7 @@ class Scanner:
             }   
         )
 
-        self._scan_result = crew_man.begin(out_bucket)
+        self._scan_result = crew_man.begin_scan()
 
     def _summarize(self, bucket: dict | None = None) -> tuple[int, int, int]:
         if bucket is None:
