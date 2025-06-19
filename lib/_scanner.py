@@ -24,15 +24,17 @@ def _ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) 
 def _ignore_file(name: str, scan_hidden: bool, scan_file_extensions: set[str] | None) -> bool:
     should_ignore = not scan_hidden and name.startswith(".")
 
-    if scan_file_extensions is None:
+    if should_ignore:
+        return True
+    
+    if not scan_file_extensions:
         return should_ignore
 
-    extension_matched = False
     for ext in scan_file_extensions:
         if name.lower().endswith("." + ext.lower()):
-            extension_matched = True
+            return False
     
-    return should_ignore or not extension_matched
+    return True
 
 
 class _CrewManager:

@@ -13,7 +13,7 @@ _IGNORE_DIRS = set([
 
 
 class ScanConfig(_pydantic.BaseModel):
-    absolute_path: str
+    path: str
     scan_hidden_dirs: bool
     scan_hidden_files: bool
 
@@ -34,6 +34,15 @@ def scan_directory(config: ScanConfig) -> dict:
         "scan_result": dict[str, list[str] | dict]
     }
 
+    Exanple usage:
+    scan_directory(
+        ScanConfig(
+            path="~/Pictures",
+            scan_hidden_dirs=True,
+            scan_hidden_files=True,
+        )
+    )
+
     Example response:
     {
         "summary": {
@@ -45,12 +54,12 @@ def scan_directory(config: ScanConfig) -> dict:
             "Pictures": {
                 "__files__": [
                     "IMG_0695.jpeg",
-                    "82737F58-705F-46D8-8F37-95F09366601B.JPG",
-                    "Screenshot 2022-02-28 at 3.20.48 PM.png"
+                    "A cute dog.png",
+                    "82737F58-705F-46D8-8F37-95F09366601B.JPG"
                 ],
                 "Screenshots": {
                     "__files__": [
-                        "A cute dog.png"
+                        "Screenshot 2022-02-28 at 3.20.48 PM.png"
                     ]
                 }
             }
@@ -62,9 +71,8 @@ def scan_directory(config: ScanConfig) -> dict:
         max_workers = cpu_count * 2
     
     scanner = _lib.Scanner(
-        directory=config.absolute_path,
+        directory=config.path,
         config={
-            "summarize": True,
             "max_workers": max_workers,
             "ignore_dirs": _IGNORE_DIRS,
             "scan_hidden_dirs": config.scan_hidden_dirs,
