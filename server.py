@@ -25,28 +25,28 @@ mcp = _fastmcp.FastMCP("File system")
 def scan_directory(config: ScanConfig) -> dict:
     """
     Scans a directory and all its sub-directories. 
-    Returns a dictionary containing directory names and file names inside the directory.
-    The directory contents are returned in the key "scan_result" and a quick summary count of directories, files and errors.
+    Returns scan results as a mapping of directory name(s) to its contents.
+    A quick summary of the scan is also included in the returned ductionary.
 
     Returns: dict
     {
-        "dir_count": int,
-        "file_count: int,
-        "error_count": int,
-        "scan_result": dict
+        "summary": dict[str, int],
+        "scan_result": dict[str, list[str] | dict]
     }
 
-    Example return:
+    Example response:
     {
-        "dir_count": 2,
-        "file_count: 4,
-        "error_count": 0,
+        "summary": {
+            "dir_count": 2,
+            "file_count: 4,
+            "error_count": 0,
+        },
         "scan_result": {
             "Pictures": {
                 "__files__": [
                     "IMG_0695.jpeg",
                     "82737F58-705F-46D8-8F37-95F09366601B.JPG",
-                    "Screenshot 2022-02-28 at 3.20.48 AM.png"
+                    "Screenshot 2022-02-28 at 3.20.48 PM.png"
                 ],
                 "Screenshots": {
                     "__files__": [
@@ -73,14 +73,9 @@ def scan_directory(config: ScanConfig) -> dict:
     )
     scanner.start()
 
-    scan_result = scanner.result
-    scan_summary = scanner.summary
-
     return {
-        "dir_count": scan_summary["dir_count"],
-        "file_count": scan_summary["file_count"],
-        "error_count": scan_summary["error_count"],
-        "scan_result": scan_result,
+        "summary":  scanner.summary,
+        "scan_result": scanner.result,
     }
 
 if __name__ == "__main__":

@@ -127,11 +127,11 @@ class Scanner:
         self._scan_file_extensions: set[str] | None = config.get("scan_file_extensions", None)
     
     @property
-    def result(self) -> dict:
+    def result(self) -> dict[str, list[str] | dict]:
         return self._scan_result
     
     @property
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, int]:
         error_count, dir_count, file_count = self._summarize()
 
         return {
