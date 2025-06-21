@@ -1,4 +1,3 @@
-import os as _os
 import lib as _lib
 import fastmcp as _fastmcp
 import pydantic as _pydantic
@@ -66,14 +65,11 @@ def scan_directory(config: ScanConfig) -> dict:
         }
     }
     """
-    max_workers = 8
-    if cpu_count := _os.cpu_count():
-        max_workers = cpu_count * 2
     
     scanner = _lib.Scanner(
         directory=config.path,
         config={
-            "max_workers": max_workers,
+            "max_workers": 2,
             "ignore_dirs": _IGNORE_DIRS,
             "scan_hidden_dirs": config.scan_hidden_dirs,
             "scan_hidden_files": config.scan_hidden_files,

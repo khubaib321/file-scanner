@@ -14,10 +14,10 @@ def main():
     ])
 
     scanner = _lib.Scanner(
-        directory="~",
+        directory="/",
         config={
             "summarize": True,
-            "max_workers": 16,
+            "max_workers": 2,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": True,
             "scan_hidden_files": True,
