@@ -263,6 +263,8 @@ class Scanner:
 
             elif isinstance(scan_result[key], dict):
                 result["dirs"].append(key)
+        
+        print(_json.dumps(result, indent=2), flush=True)
 
         return result
     
