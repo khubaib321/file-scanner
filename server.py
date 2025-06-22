@@ -40,47 +40,9 @@ mcp = _fastmcp.FastMCP("File system")
 @mcp.tool
 def deep_scan(config: ScanConfig) -> DeepScanResponse:
     """
-    Run deep scan on a directory and all sub-directories.
+    Run a deep scan on the given directory and all sub-directories.
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
-
-    Example usage:
-    ```
-    scan_directory(
-        ScanConfig(
-            path="~/Pictures",
-            scan_hidden_dirs=True,
-            scan_hidden_files=True,
-        )
-    )
-    ```
-
-    Example response:
-    ```
-    {
-        "summary": {
-            "dir_count": 2,
-            "file_count: 4,
-            "error_count": 0,
-        },
-        "scan_result": {
-            "Pictures": {
-                "__path__": "/Users/currentuser/Pictures",
-                "__files__": [
-                    "IMG_0695.jpeg",
-                    "A cute dog.png",
-                    "82737F58-705F-46D8-8F37-95F09366601B.JPG"
-                ],
-                "Screenshots": {
-                    "__path__": "/Users/currentuser/Pictures/Screenshots",
-                    "__files__": [
-                        "Screenshot 2022-02-28 at 3.20.48 PM.png"
-                    ]
-                }
-            }
-        }
-    }
-    ```
     """
     
     scanner = _lib.Scanner(
@@ -107,33 +69,8 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
 @mcp.tool
 def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
     """
-    Run a shallow only on the provided directory.
-
-    Example usage:
-    ```
-    scan_directory(
-        ScanConfig(
-            path="~/Pictures",
-            scan_hidden_dirs=True,
-            scan_hidden_files=True,
-        )
-    )
-    ```
-
-    Example response:
-    ```
-    {
-        "path": "/Users/currentuser/Pictures",
-        "dirs": [
-            "/Users/currentuser/Pictures/Screenshots",
-        ],
-        "files": [
-            "IMG_0695.jpeg",
-            "A cute dog.png",
-            "82737F58-705F-46D8-8F37-95F09366601B.JPG"
-        ],
-    }
-    ```
+    Run a shallow scan only on the given directory.
+    Simply lists files and folder names found under the given directory.
     """
 
     scanner = _lib.Scanner(
