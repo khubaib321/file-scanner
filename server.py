@@ -69,7 +69,6 @@ def scan_directory(config: ScanConfig) -> dict:
     scanner = _lib.Scanner(
         directory=config.path,
         config={
-            "max_workers": 2,
             "ignore_dirs": _IGNORE_DIRS,
             "scan_hidden_dirs": config.scan_hidden_dirs,
             "scan_hidden_files": config.scan_hidden_files,

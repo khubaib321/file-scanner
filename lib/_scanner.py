@@ -37,69 +37,123 @@ def _ignore_file(name: str, scan_hidden: bool, scan_file_extensions: set[str] | 
     return True
 
 
-class _CrewManager:
+class _TaskManager:
     def __init__(self, params: dict) -> None:
         self._work_q = _q.Queue()
+        self._workers_to_deploy: int = 0
 
         self._path: str = params["path"]
-        self._max_workers: int = params["max_workers"]
         self._ignore_dirs: set[str] = params["ignore_dirs"]
         self._scan_hidden_dirs: bool = params["scan_hidden_dirs"]
         self._scan_hidden_files: bool = params["scan_hidden_files"]
         self._scan_file_extensions: set[str] | None = params["scan_file_extensions"]
     
-    def _worker(self, work_q: _q.Queue):
-        while True:
-            try:
-                params = work_q.get(timeout=3)
-            except _q.Empty:
-                continue
+    def _skim_dir(self, path: str) -> dict:
+        result: dict = {
+            "__path__": str(path),
+            "__files__": [],
+        }
 
-            if not params["path"]:
-                work_q.task_done()
-                break
+        try:
+            with _os.scandir(path) as it:
+                for entry in it:
+                    if (
+                        entry.is_file(follow_symlinks=False)
+                        and not _ignore_file(entry.name, self._scan_hidden_files, self._scan_file_extensions)
+                    ):
+                        result["__files__"].append(entry.name)
+                    
+                    elif (
+                        entry.is_dir(follow_symlinks=False)
+                        and not _ignore_dir(entry.path, entry.name, self._ignore_dirs, self._scan_hidden_dirs)
+                    ):
+                        result[entry.name] = {
+                            "__path__": str(entry.path),
+                            "__files__": []
+                        }
+        
+        except OSError as e:
+            result["__error__"] = str(e)
             
-            path = params["path"]
-            params["bucket"]["__files__"] = []
+        return result
+    
+    def _crawl_dir(self, out_bucket: dict) -> None:
+        assert "__path__" in out_bucket, "Provided bucket has no '__path__'"
+        assert "__files__" in out_bucket, "Provided bucket has no '__files__'"
+
+        crawl_targets = [(out_bucket["__path__"], out_bucket)]
+        while crawl_targets:
+            target_path, target_bucket = crawl_targets.pop(0)
 
             try:
-                with _os.scandir(path) as it:
+                with _os.scandir(target_path) as it:
                     for entry in it:
                         if (
                             entry.is_file(follow_symlinks=False)
                             and not _ignore_file(entry.name, self._scan_hidden_files, self._scan_file_extensions)
                         ):
-                            params["bucket"]["__files__"].append(entry.name)
-
+                            target_bucket["__files__"].append(entry.name)
+                        
                         elif (
                             entry.is_dir(follow_symlinks=False)
                             and not _ignore_dir(entry.path, entry.name, self._ignore_dirs, self._scan_hidden_dirs)
                         ):
-
-                            sub_bucket = {}
-                            params["bucket"][entry.name] = sub_bucket
-                            work_q.put({
-                                "path": entry.path,
-                                "bucket": sub_bucket,
-                            })
+                            target_bucket[entry.name] = {
+                                "__path__": entry.path,
+                                "__files__": []
+                            }
+                            crawl_targets.append(
+                                (entry.path, target_bucket[entry.name])
+                            )
 
             except OSError as e:
-                params["bucket"]["__error__"] = str(e)
+                target_bucket["__error__"] = str(e)
 
-            finally:
+    
+    def _worker(self, work_q: _q.Queue):
+        while True:
+            try:
+                params = work_q.get(timeout=1)
+            except _q.Empty:
+                continue
+
+            if not params["path"]:
                 work_q.task_done()
+                return
+            
+            path = params["path"]
+            params["bucket"]["__path__"] = path
+            params["bucket"]["__files__"] = []
+
+            self._crawl_dir(params["bucket"])
+
+            work_q.task_done()
+    
+    @property
+    def workers_deployed(self) -> int:
+        return self._workers_to_deploy
     
     def begin_scan(self) -> dict:
-        result_bucket: dict = {}
-        self._work_q.put(
-            {
-                "path": self._path,
-                "bucket": result_bucket,
-            },
-        )
+        result_bucket: dict = self._skim_dir(self._path)
+
+        if "__error__" in result_bucket:
+            return result_bucket
+
+        root_width = 0
+        for key, value in result_bucket.items():
+            if key not in {"__path__", "__files__"}:
+                self._work_q.put(
+                    {
+                        "path": value["__path__"],
+                        "bucket": result_bucket[key],
+                    },
+                )
+                root_width += 1
+
+        self._workers_to_deploy = min(root_width, _MAX_WORKERS)
         threads = [
             _threading.Thread(target=self._worker, args=(self._work_q,), daemon=True)
-            for _ in range(self._max_workers)
+            for _ in range(self._workers_to_deploy)
         ]
         for t in threads:
             t.start()
@@ -121,12 +175,21 @@ class Scanner:
         self._scan_result: dict = {}
 
         self._gen_summary: bool = config.get("summarize", False)
-        self._max_workers: int = config.get("max_workers", _MAX_WORKERS)
         self._ignore_dirs: set[str] = config.get("ignore_dirs", _IGNORE_DIRS)
         self._output_file_name: str | None = config.get("output_file_name", None)
         self._scan_hidden_dirs: bool = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
         self._scan_hidden_files: bool = config.get("scan_hidden_files", _SCAN_HIDDEN_FILES)
         self._scan_file_extensions: set[str] | None = config.get("scan_file_extensions", None)
+
+        self._task_man = _TaskManager(
+            params={
+                "path": str(self._root_path),
+                "ignore_dirs": self._ignore_dirs,
+                "scan_hidden_dirs": self._scan_hidden_dirs,
+                "scan_hidden_files": self._scan_hidden_files,
+                "scan_file_extensions": self._scan_file_extensions
+            }   
+        )
     
     @property
     def result(self) -> dict[str, list[str] | dict]:
@@ -141,24 +204,17 @@ class Scanner:
             "file_count": file_count,
             "error_count": error_count,
         }
+    
+    @property
+    def workers_deployed(self) -> int:
+        return self._task_man.workers_deployed
 
     @_helpers.time_it()
     def _scan_dir(self) -> None:
         if not (self._root_path.exists() and self._root_path.is_dir()):
             return None
 
-        crew_man = _CrewManager(
-            params={
-                "path": str(self._root_path),
-                "max_workers": self._max_workers,
-                "ignore_dirs": self._ignore_dirs,
-                "scan_hidden_dirs": self._scan_hidden_dirs,
-                "scan_hidden_files": self._scan_hidden_files,
-                "scan_file_extensions": self._scan_file_extensions
-            }   
-        )
-
-        self._scan_result = crew_man.begin_scan()
+        self._scan_result = self._task_man.begin_scan()
 
     def _summarize(self, bucket: dict | None = None) -> tuple[int, int, int]:
         if bucket is None:
@@ -168,11 +224,11 @@ class Scanner:
             return 1, 0, 0
 
         error_count = 0
-        dir_count = len(bucket) - 1
+        dir_count = len(bucket) - 2
         file_count = len(bucket["__files__"])
 
         for key, value in bucket.items():
-            if key != "__files__":
+            if key not in {"__path__", "__files__"}:
                 ret = self._summarize(bucket=value)
                 dir_count += ret[1]
                 file_count += ret[2]
@@ -204,7 +260,7 @@ class Scanner:
             print(" - Ignored dirs:", self._ignore_dirs or "None")
             print(" - File extensions:", self._scan_file_extensions or "All")
             print("")
-            print(f"Workers: {self._max_workers}")
+            print(f"Workers: {self.workers_deployed}")
             print(f"Total dirs: {dirs_count:,}")
             print(f"Total files: {files_count:,}")
             print(f"Failed scans: {errors:,}")

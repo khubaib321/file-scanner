@@ -17,12 +17,11 @@ def main():
         directory="/",
         config={
             "summarize": True,
-            "max_workers": 2,
             "ignore_dirs": ignore_dirs,
             "scan_hidden_dirs": True,
             "scan_hidden_files": True,
             "output_file_name": "files",
-            "scan_file_extensions": scan_file_extensions,
+            # "scan_file_extensions": scan_file_extensions,
         },
     )
     scanner.start()
