@@ -44,8 +44,9 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
 
-    This method can return a lot of nested contents when called on directories high up in the hierarchy.
-    Use with caution.
+    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
+    Note: Use with caution. This method can return substantially large amount of nested contents when 
+    called on directories high up in the hierarchy. The response may not fit in the model's context window.
     """
 
     scanner = _lib.Scanner(
@@ -74,6 +75,8 @@ def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
     """
     Run a shallow scan only on the given directory.
     Simply lists files and folder names found under the given directory.
+
+    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
     """
 
     scanner = _lib.Scanner(
