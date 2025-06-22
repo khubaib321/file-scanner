@@ -43,8 +43,11 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
     Run a deep scan on the given directory and all sub-directories.
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
+
+    This method can return a lot of nested contents when called on directories high up in the hierarchy.
+    Use with caution.
     """
-    
+
     scanner = _lib.Scanner(
         directory=config.path,
         config={
