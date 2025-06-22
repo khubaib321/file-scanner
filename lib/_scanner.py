@@ -243,7 +243,7 @@ class Scanner:
     
     def shallow_scan(self) -> dict[str, str | list[str]]:
         print("=============================================")
-        print("⏳ List contents", str(self._root_path))
+        print("⏳ Shallow scan", str(self._root_path), flush=True)
         scan_result = self._task_man.skim_dir(str(self._root_path))
 
         result: dict = {
@@ -268,7 +268,7 @@ class Scanner:
     
     def deep_scan(self):
         print("=============================================")
-        print("⏳ Scanning", str(self._root_path))
+        print("⏳ Deep scan", str(self._root_path), flush=True)
         self._scan_dir()
 
         if self._output_file_name:
@@ -296,4 +296,4 @@ class Scanner:
             print(f"- Total files: {files_count:,}")
             print(f"- Failed scans: {errors:,}")
         
-        print("✅ Scan complete.", flush=True)
+        print("✅ Deep scan complete.", flush=True)
