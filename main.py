@@ -24,7 +24,7 @@ def main():
             # "scan_file_extensions": scan_file_extensions,
         },
     )
-    scanner.start()
+    scanner.deep_scan()
 
 
 if __name__ == "__main__":

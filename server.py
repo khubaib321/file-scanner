@@ -19,28 +19,30 @@ class ScanConfig(_pydantic.BaseModel):
     scan_hidden_files: bool = True
 
 
-class _ScanSummary(_pydantic.BaseModel):
+class _DeepScanSummary(_pydantic.BaseModel):
     dir_count: int
     file_count: int
     error_count: int
 
 
-class ScanResponse(_pydantic.BaseModel):
-    summary: _ScanSummary
+class DeepScanResponse(_pydantic.BaseModel):
+    summary: _DeepScanSummary
     result: dict[str, str | list[str] | dict]
+
+
+class ShallowScanResponse(_pydantic.BaseModel):
+    result: dict[str, str | list[str]]
 
 
 mcp = _fastmcp.FastMCP("File system")
 
 
 @mcp.tool
-def scan_directory(config: ScanConfig) -> ScanResponse:
+def deep_scan(config: ScanConfig) -> DeepScanResponse:
     """
-    Scans a directory and all its sub-directories. 
+    Run deep scan on a directory and all sub-directories.
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
-
-    Returns: ScanResponse
 
     Example usage:
     ```
@@ -84,23 +86,71 @@ def scan_directory(config: ScanConfig) -> ScanResponse:
     scanner = _lib.Scanner(
         directory=config.path,
         config={
+            "summarize": True,
             "ignore_dirs": _IGNORE_DIRS,
             "scan_hidden_dirs": config.scan_hidden_dirs,
             "scan_hidden_files": config.scan_hidden_files,
         },
     )
-    scanner.start()
+    scanner.deep_scan()
 
-    return ScanResponse(
+    return DeepScanResponse(
         result=scanner.result,
-        summary=_ScanSummary(
+        summary=_DeepScanSummary(
             dir_count=scanner.summary["dir_count"],
             file_count=scanner.summary["file_count"],
             error_count=scanner.summary["error_count"],
         )
     )
 
+
+@mcp.tool
+def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
+    """
+    Run a shallow only on the provided directory.
+
+    Example usage:
+    ```
+    scan_directory(
+        ScanConfig(
+            path="~/Pictures",
+            scan_hidden_dirs=True,
+            scan_hidden_files=True,
+        )
+    )
+    ```
+
+    Example response:
+    ```
+    {
+        "path": "/Users/currentuser/Pictures",
+        "dirs": [
+            "/Users/currentuser/Pictures/Screenshots",
+        ],
+        "files": [
+            "IMG_0695.jpeg",
+            "A cute dog.png",
+            "82737F58-705F-46D8-8F37-95F09366601B.JPG"
+        ],
+    }
+    ```
+    """
+
+    scanner = _lib.Scanner(
+        directory=config.path,
+        config={
+            "ignore_dirs": _IGNORE_DIRS,
+            "scan_hidden_dirs": config.scan_hidden_dirs,
+            "scan_hidden_files": config.scan_hidden_files,
+        },
+    )
+
+    return ShallowScanResponse(
+        result=scanner.shallow_scan()
+    )
+
+
 if __name__ == "__main__":
-    mcp.run()
+    # mcp.run()
     # mcp.run("streamable-http")
-    # _asyncio.run(mcp.run_http_async(transport="sse"))
+    _asyncio.run(mcp.run_http_async(transport="sse", port=8001))

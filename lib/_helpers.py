@@ -17,7 +17,7 @@ def time_it() -> Callable:
             end_time = _time.time()
             
             execution_time = end_time - start_time
-            print(f"{execution_time:.3f} seconds")
+            print(f"{execution_time:.3f} seconds", flush=True)
             
             return result
 

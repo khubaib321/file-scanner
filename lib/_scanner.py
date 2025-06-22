@@ -48,7 +48,7 @@ class _TaskManager:
         self._scan_hidden_files: bool = params["scan_hidden_files"]
         self._scan_file_extensions: set[str] | None = params["scan_file_extensions"]
     
-    def _skim_dir(self, path: str) -> dict:
+    def skim_dir(self, path: str) -> dict:
         result: dict = {
             "__path__": str(path),
             "__files__": [],
@@ -134,7 +134,7 @@ class _TaskManager:
         return self._workers_to_deploy
     
     def begin_scan(self) -> dict:
-        result_bucket: dict = self._skim_dir(self._path)
+        result_bucket: dict = self.skim_dir(self._path)
 
         if "__error__" in result_bucket:
             return result_bucket
@@ -241,7 +241,33 @@ class Scanner:
 
         return error_count, dir_count, file_count
     
-    def start(self):
+    def shallow_scan(self) -> dict[str, str | list[str]]:
+        print("=============================================")
+        print("⏳ List contents", str(self._root_path))
+        scan_result = self._task_man.skim_dir(str(self._root_path))
+
+        result: dict = {
+            "path": "",
+            "dirs": [],
+            "files": [],
+        }
+        for key in scan_result:
+            if key == "__path__":
+                result["path"] = scan_result[key]
+
+            elif key == "__files__":
+                result["files"] = scan_result[key]
+            
+            elif key == "__error__":
+                result["__error__"] = scan_result[key]
+
+            elif isinstance(scan_result[key], dict):
+                result["dirs"].append(key)
+
+        return result
+    
+    def deep_scan(self):
+        print("=============================================")
         print("⏳ Scanning", str(self._root_path))
         self._scan_dir()
 
@@ -258,17 +284,16 @@ class Scanner:
             errors, dirs_count, files_count = self._summarize()
             print("✅")
 
-            print("=============================================")
+            print("")
             print("Scanned", str(self._root_path))
             print(" - Hidden dirs:", "✅" if self._scan_hidden_dirs else "❌")
             print(" - Hidden files:", "✅" if self._scan_hidden_files else "❌")
             print(" - Ignored dirs:", self._ignore_dirs or "None")
             print(" - File extensions:", self._scan_file_extensions or "All")
             print("")
-            print(f"Workers: {self.workers_deployed}")
-            print(f"Total dirs: {dirs_count:,}")
-            print(f"Total files: {files_count:,}")
-            print(f"Failed scans: {errors:,}")
-            print("=============================================")
+            print(f"- Workers: {self.workers_deployed}")
+            print(f"- Total dirs: {dirs_count:,}")
+            print(f"- Total files: {files_count:,}")
+            print(f"- Failed scans: {errors:,}")
         
-        print("✅ Scan complete.")
+        print("✅ Scan complete.", flush=True)
