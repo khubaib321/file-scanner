@@ -5,6 +5,8 @@ import asyncio as _asyncio
 
 
 _IGNORE_DIRS = set([
+    "cache",
+    "__pycache__",
     "credintials",
     "_credintials",
     "legacy_credentials",
@@ -13,27 +15,35 @@ _IGNORE_DIRS = set([
 
 class ScanConfig(_pydantic.BaseModel):
     path: str
-    scan_hidden_dirs: bool
-    scan_hidden_files: bool
+    scan_hidden_dirs: bool = False
+    scan_hidden_files: bool = True
+
+
+class _ScanSummary(_pydantic.BaseModel):
+    dir_count: int
+    file_count: int
+    error_count: int
+
+
+class ScanResponse(_pydantic.BaseModel):
+    summary: _ScanSummary
+    result: dict[str, str | list[str] | dict]
 
 
 mcp = _fastmcp.FastMCP("File system")
 
 
 @mcp.tool
-def scan_directory(config: ScanConfig) -> dict:
+def scan_directory(config: ScanConfig) -> ScanResponse:
     """
     Scans a directory and all its sub-directories. 
     Returns scan results as a mapping of directory name(s) to its contents.
-    A quick summary of the scan is also included in the returned ductionary.
+    A quick summary of the scan is also included in the returned dictionary.
 
-    Returns: dict
-    {
-        "summary": dict[str, int],
-        "scan_result": dict[str, list[str] | dict]
-    }
+    Returns: ScanResponse
 
-    Exanple usage:
+    Example usage:
+    ```
     scan_directory(
         ScanConfig(
             path="~/Pictures",
@@ -41,8 +51,10 @@ def scan_directory(config: ScanConfig) -> dict:
             scan_hidden_files=True,
         )
     )
+    ```
 
     Example response:
+    ```
     {
         "summary": {
             "dir_count": 2,
@@ -51,12 +63,14 @@ def scan_directory(config: ScanConfig) -> dict:
         },
         "scan_result": {
             "Pictures": {
+                "__path__": "/Users/currentuser/Pictures",
                 "__files__": [
                     "IMG_0695.jpeg",
                     "A cute dog.png",
                     "82737F58-705F-46D8-8F37-95F09366601B.JPG"
                 ],
                 "Screenshots": {
+                    "__path__": "/Users/currentuser/Pictures/Screenshots",
                     "__files__": [
                         "Screenshot 2022-02-28 at 3.20.48 PM.png"
                     ]
@@ -64,6 +78,7 @@ def scan_directory(config: ScanConfig) -> dict:
             }
         }
     }
+    ```
     """
     
     scanner = _lib.Scanner(
@@ -76,11 +91,16 @@ def scan_directory(config: ScanConfig) -> dict:
     )
     scanner.start()
 
-    return {
-        "summary":  scanner.summary,
-        "scan_result": scanner.result,
-    }
+    return ScanResponse(
+        result=scanner.result,
+        summary=_ScanSummary(
+            dir_count=scanner.summary["dir_count"],
+            file_count=scanner.summary["file_count"],
+            error_count=scanner.summary["error_count"],
+        )
+    )
 
 if __name__ == "__main__":
+    mcp.run()
     # mcp.run("streamable-http")
-    _asyncio.run(mcp.run_http_async(transport="sse"))
+    # _asyncio.run(mcp.run_http_async(transport="sse"))

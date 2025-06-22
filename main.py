@@ -7,11 +7,11 @@ def main():
         "_credintials",
         "legacy_credentials",
     ])
-    scan_file_extensions = set([
-        "png",
-        "jpg",
-        "jpeg",
-    ])
+    # scan_file_extensions = set([
+    #     "png",
+    #     "jpg",
+    #     "jpeg",
+    # ])
 
     scanner = _lib.Scanner(
         directory="/",

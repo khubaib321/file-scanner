@@ -172,7 +172,7 @@ class _TaskManager:
 class Scanner:
     def __init__(self, directory: str, config: dict) -> None:
         self._root_path = _pathlib.Path(directory).expanduser()
-        self._scan_result: dict = {}
+        self._scan_result: dict[str, str | list[str] | dict] = {}
 
         self._gen_summary: bool = config.get("summarize", False)
         self._ignore_dirs: set[str] = config.get("ignore_dirs", _IGNORE_DIRS)
@@ -192,7 +192,7 @@ class Scanner:
         )
     
     @property
-    def result(self) -> dict[str, list[str] | dict]:
+    def result(self) -> dict[str, str | list[str] | dict]:
         return self._scan_result
     
     @property
@@ -212,7 +212,12 @@ class Scanner:
     @_helpers.time_it()
     def _scan_dir(self) -> None:
         if not (self._root_path.exists() and self._root_path.is_dir()):
-            return None
+            self._scan_result = {
+                "__path__": str(self._root_path),
+                "__files__": [],
+                "__error__": f"Provided path '{self._root_path}' does not exist."
+            }
+            return
 
         self._scan_result = self._task_man.begin_scan()
 

@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=2.8.1",
+    "mcpo>=0.0.15",
     "pydantic>=2.11.7",
 ]
