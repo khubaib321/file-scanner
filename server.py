@@ -34,7 +34,7 @@ class ShallowScanResponse(_pydantic.BaseModel):
     result: dict[str, str | list[str]]
 
 
-mcp = _fastmcp.FastMCP("File system")
+mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 
 @mcp.tool
