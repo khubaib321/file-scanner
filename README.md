@@ -1,2 +1,2 @@
-# File scanner [wip]
-Unearth the secrets buried deep within your file system.
+# File system MCP (MacOS) [WIP]
+Use LLMs to unearth the secrets buried deep within your file system.
