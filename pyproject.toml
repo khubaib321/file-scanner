@@ -1,5 +1,5 @@
 [project]
-name = "file-scanner"
+name = "file-system-mcp"
 version = "0.1.0"
 description = "Scan a directory. Discover files and folders 🤯"
 readme = "README.md"
