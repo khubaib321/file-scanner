@@ -6,11 +6,10 @@ uv sync
 uv run server.py > logs/server.log &
 server_pid=$!
 
-echo "MCP server started. Find logs in logs/server.log"
+echo "MCP server started [$server_pid]. Find logs in logs/server.log"
 
 cleanup() {
-  echo "Shutting down MCP server..."
-  # The minus sign kills the whole process-group, not just the leader
+  echo "Shutting down MCP server [$server_pid]..."
   kill -TERM -"$server_pid" 2>/dev/null || true
 }
 

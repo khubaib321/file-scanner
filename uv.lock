@@ -216,7 +216,7 @@ wheels = [
 ]
 
 [[package]]
-name = "file-scanner"
+name = "file-system-mcp"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

@@ -1,6 +1,6 @@
 {
     "mcpServers": {
-      "file_scanner": {
+      "file-system": {
         "type": "sse",
         "url": "http://127.0.0.1:8001/sse",
         "headers": {
