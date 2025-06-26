@@ -5,7 +5,9 @@ import asyncio as _asyncio
 
 
 _IGNORE_DIRS = set([
+    ".git",
     "cache",
+    ".venv",
     "__pycache__",
     "credintials",
     "_credintials",
@@ -34,21 +36,27 @@ class ShallowScanResponse(_pydantic.BaseModel):
     result: dict[str, str | list[str]]
 
 
+class GetFileContentsResponse(_pydantic.BaseModel):
+    error: str | None
+    lines: list[str]
+
+
 mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 
-@mcp.tool
-def deep_scan(config: ScanConfig) -> DeepScanResponse:
-    """
+@mcp.tool(
+    name="deep-scan",
+    description="""
     Run a deep scan on the given directory and all sub-directories.
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
 
     Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
-    Note: Use with caution. This method can return substantially large amount of nested contents when 
+    Use with caution. This method can return substantially large amount of nested contents when 
     called on directories high up in the hierarchy. The response may not fit in the model's context window.
     """
-
+)
+def deep_scan(config: ScanConfig) -> DeepScanResponse:
     scanner = _lib.Scanner(
         directory=config.path,
         config={
@@ -70,15 +78,16 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
     )
 
 
-@mcp.tool
-def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
-    """
+@mcp.tool(
+    name="shallow-scan",
+    description="""
     Run a shallow scan only on the given directory.
     Simply lists files and folder names found under the given directory.
 
     Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
     """
-
+)
+def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
     scanner = _lib.Scanner(
         directory=config.path,
         config={
@@ -90,6 +99,23 @@ def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
 
     return ShallowScanResponse(
         result=scanner.shallow_scan()
+    )
+
+
+@mcp.tool(
+    name="get-file-contents",
+    description="""
+    Read the given file and return its content.
+
+    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
+    """
+)
+def get_file_contents(path: str) -> GetFileContentsResponse:
+    result = _lib.get_file_contents(path)
+
+    return GetFileContentsResponse(
+        lines=result.lines,
+        error=result.error,
     )
 
 
