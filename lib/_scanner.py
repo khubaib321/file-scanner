@@ -171,6 +171,12 @@ class _TaskManager:
 
 class Scanner:
     def __init__(self, directory: str, config: dict) -> None:
+        if not directory.startswith("~"):
+            if not directory.startswith("/"):
+                directory = "~" + directory
+            else:
+                directory = "/" + directory
+
         self._root_path = _pathlib.Path(directory).expanduser()
         self._scan_result: dict[str, str | list[str] | dict] = {}
 
