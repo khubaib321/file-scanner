@@ -5,6 +5,7 @@ import asyncio as _asyncio
 
 
 _IGNORE_DIRS = set([
+    ".ssh",
     ".git",
     "cache",
     ".venv",

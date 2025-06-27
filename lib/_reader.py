@@ -36,7 +36,9 @@ def get_file_contents(path: str) -> FileContentsResult:
             ]
 
     except OSError as e:
-        result.error = str(e)
-        print(str(e), flush=True)
+        error = str(e)
+        error += "- Make sure the file path is correct and try again."
+        result.error = error
+        print(error, flush=True)
     
     return result
