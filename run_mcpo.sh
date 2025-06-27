@@ -1,8 +1,11 @@
 #!/bin/bash
 set -euo pipefail
-source .venv/bin/activate
 
 uv sync
+source .venv/bin/activate
+
+sleep 2
+
 uv run server.py > logs/server.log &
 server_pid=$!
 
