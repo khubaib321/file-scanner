@@ -21,20 +21,36 @@ def _ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) 
     )
 
 
-def _ignore_file(name: str, scan_hidden: bool, scan_file_extensions: set[str] | None) -> bool:
-    should_ignore = not scan_hidden and name.startswith(".")
+def _should_consider_file(
+    filename: str,
+    *, 
+    scan_hidden: bool, 
+    search_file_names: set[str] | None,
+    search_file_extensions: set[str] | None,
+) -> bool:
+    if not scan_hidden and filename.startswith("."):
+        return False
 
-    if should_ignore:
-        return True
-    
-    if not scan_file_extensions:
-        return should_ignore
+    should_consider = True
 
-    for ext in scan_file_extensions:
-        if name.lower().endswith("." + ext.lower()):
+    if search_file_names:
+        should_consider = False
+        for to_search in search_file_names:
+            if to_search.lower() in filename.lower():
+                should_consider = True
+                break
+        
+        if not should_consider:
             return False
-    
-    return True
+
+    if search_file_extensions:
+        should_consider = False
+        for ext in search_file_extensions:
+            if filename.lower().endswith("." + ext.lower()):
+                should_consider = True
+                break
+
+    return should_consider
 
 
 class _TaskManager:
@@ -46,7 +62,8 @@ class _TaskManager:
         self._ignore_dirs: set[str] = params["ignore_dirs"]
         self._scan_hidden_dirs: bool = params["scan_hidden_dirs"]
         self._scan_hidden_files: bool = params["scan_hidden_files"]
-        self._scan_file_extensions: set[str] | None = params["scan_file_extensions"]
+        self._search_file_names: set[str] | None = params["search_file_names"]
+        self._search_file_extensions: set[str] | None = params["search_file_extensions"]
     
     def skim_dir(self, path: str) -> dict:
         result: dict = {
@@ -59,7 +76,12 @@ class _TaskManager:
                 for entry in it:
                     if (
                         entry.is_file(follow_symlinks=False)
-                        and not _ignore_file(entry.name, self._scan_hidden_files, self._scan_file_extensions)
+                        and _should_consider_file(
+                            entry.name,
+                            scan_hidden=self._scan_hidden_files, 
+                            search_file_names=self._search_file_names,
+                            search_file_extensions=self._search_file_extensions
+                        )
                     ):
                         result["__files__"].append(entry.name)
                     
@@ -90,7 +112,12 @@ class _TaskManager:
                     for entry in it:
                         if (
                             entry.is_file(follow_symlinks=False)
-                            and not _ignore_file(entry.name, self._scan_hidden_files, self._scan_file_extensions)
+                            and _should_consider_file(
+                                entry.name,
+                                scan_hidden=self._scan_hidden_files, 
+                                search_file_names=self._search_file_names,
+                                search_file_extensions=self._search_file_extensions
+                            )
                         ):
                             target_bucket["__files__"].append(entry.name)
                         
@@ -141,7 +168,7 @@ class _TaskManager:
 
         root_width = 0
         for key, value in result_bucket.items():
-            if key not in {"__path__", "__files__"}:
+            if isinstance(value, dict):
                 self._work_q.put(
                     {
                         "path": value["__path__"],
@@ -174,8 +201,6 @@ class Scanner:
         if not directory.startswith("~"):
             if not directory.startswith("/"):
                 directory = "~" + directory
-            else:
-                directory = "/" + directory
 
         self._root_path = _pathlib.Path(directory).expanduser()
         self._scan_result: dict[str, str | list[str] | dict] = {}
@@ -185,7 +210,8 @@ class Scanner:
         self._output_file_name: str | None = config.get("output_file_name", None)
         self._scan_hidden_dirs: bool = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
         self._scan_hidden_files: bool = config.get("scan_hidden_files", _SCAN_HIDDEN_FILES)
-        self._scan_file_extensions: set[str] | None = config.get("scan_file_extensions", None)
+        self._search_file_names: set[str] | None = config.get("search_file_names", None)
+        self._search_file_extensions: set[str] | None = config.get("search_file_extensions", None)
 
         self._task_man = _TaskManager(
             params={
@@ -193,7 +219,8 @@ class Scanner:
                 "ignore_dirs": self._ignore_dirs,
                 "scan_hidden_dirs": self._scan_hidden_dirs,
                 "scan_hidden_files": self._scan_hidden_files,
-                "scan_file_extensions": self._scan_file_extensions
+                "search_file_names": self._search_file_names,
+                "search_file_extensions": self._search_file_extensions
             }   
         )
     
@@ -238,8 +265,8 @@ class Scanner:
         dir_count = len(bucket) - 2
         file_count = len(bucket["__files__"])
 
-        for key, value in bucket.items():
-            if key not in {"__path__", "__files__"}:
+        for _, value in bucket.items():
+            if isinstance(value, dict):
                 ret = self._summarize(bucket=value)
                 dir_count += ret[1]
                 file_count += ret[2]
@@ -275,7 +302,6 @@ class Scanner:
         return result
     
     def deep_scan(self):
-        print("=============================================")
         print("⏳ Deep scan", str(self._root_path), flush=True)
         self._scan_dir()
 
@@ -297,7 +323,8 @@ class Scanner:
             print(" - Hidden dirs:", "✅" if self._scan_hidden_dirs else "❌")
             print(" - Hidden files:", "✅" if self._scan_hidden_files else "❌")
             print(" - Ignored dirs:", self._ignore_dirs or "None")
-            print(" - File extensions:", self._scan_file_extensions or "All")
+            print(" - File names:", self._search_file_names or "All")
+            print(" - File extensions:", self._search_file_extensions or "All")
             print("")
             print(f"- Workers: {self.workers_deployed}")
             print(f"- Total dirs: {dirs_count:,}")
@@ -305,3 +332,26 @@ class Scanner:
             print(f"- Failed scans: {errors:,}")
         
         print("✅ Deep scan complete.", flush=True)
+    
+    def search_scan(self) -> dict[str, list[str]]:
+        print("⏳ Search scan", str(self._root_path), flush=True)
+
+        self.deep_scan()
+        search_result: dict[str, list[str]] = {}
+
+        def _compile_result(bucket: dict | None = None):
+            if bucket is None:
+                bucket = self._scan_result
+            
+            if "__error__" in bucket:
+                return None
+            
+            if bucket["__files__"]:
+                search_result[bucket["__path__"]] = bucket["__files__"]
+
+            for _, value in bucket.items():
+                if isinstance(value, dict):
+                    _compile_result(value)
+        
+        _compile_result()
+        return search_result
