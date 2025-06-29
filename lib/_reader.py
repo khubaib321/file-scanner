@@ -16,12 +16,9 @@ def _strip_ansi(text: str) -> str:
 
 
 def get_file_contents(path: str) -> FileContentsResult:
-    print("=============================================")
     if not path.startswith("~"):
         if not path.startswith("/"):
-            path = "~" + path
-        else:
-            path = "/" + path
+            path = "~/" + path
 
     abs_path = _pathlib.Path(path).expanduser()
     print("⏳ Get file contents", str(abs_path), flush=True)

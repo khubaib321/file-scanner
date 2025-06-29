@@ -73,10 +73,12 @@ mcp = _fastmcp.FastMCP("MacOS file system tools")
     Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
     Use with caution. This method can return substantially large amount of nested contents when 
     called on directories high up in the hierarchy. The response may not fit in the model's context window.
-    """
+    """,
+    enabled=False,
 )
 def deep_scan(config: ScanConfig) -> DeepScanResponse:
-    print("=============================================", flush=True)
+    print("=============================================")
+    print("deep_scan:", config.path, flush=True)
 
     scanner = _lib.Scanner(
         directory=config.path,
@@ -111,7 +113,8 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
     """
 )
 def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
-    print("=============================================", flush=True)
+    print("=============================================")
+    print("shallow_scan:", config.path, flush=True)
 
     scanner = _lib.Scanner(
         directory=config.path,
@@ -130,12 +133,12 @@ def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
 
 
 @mcp.tool(
-    name="search-files",
+    name="search-directory",
     description="""
-    Run a deep scan on the given directory and return files having provided names or extensions.
+    Run a deep scan on the given directory and return files with given names or extensions.
 
     Usage:
-    deep_scan(
+    search_directory(
         ScanConfig(
             path="~",
             scan_hidden_dirs=True,
@@ -146,7 +149,10 @@ def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
     )
     """
 )
-def search_files(config: ScanConfig):
+def search_directory(config: ScanConfig):
+    print("=============================================")
+    print("search_directory:", config.path, flush=True)
+
     scanner = _lib.Scanner(
         directory=config.path,
         config={
@@ -181,6 +187,9 @@ def search_files(config: ScanConfig):
     """
 )
 def get_file_contents(path: str) -> GetFileContentsResponse:
+    print("=============================================")
+    print("get_file_contents:", path, flush=True)
+
     result = _lib.get_file_contents(path)
 
     return GetFileContentsResponse(

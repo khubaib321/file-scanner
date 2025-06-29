@@ -200,7 +200,7 @@ class Scanner:
     def __init__(self, directory: str, config: dict) -> None:
         if not directory.startswith("~"):
             if not directory.startswith("/"):
-                directory = "~" + directory
+                directory = "~/" + directory
 
         self._root_path = _pathlib.Path(directory).expanduser()
         self._scan_result: dict[str, str | list[str] | dict] = {}
@@ -275,7 +275,6 @@ class Scanner:
         return error_count, dir_count, file_count
     
     def shallow_scan(self) -> dict[str, str | list[str]]:
-        print("=============================================")
         print("⏳ Shallow scan", str(self._root_path), flush=True)
         scan_result = self._task_man.skim_dir(str(self._root_path))
 
