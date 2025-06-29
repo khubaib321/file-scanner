@@ -1,4 +1,5 @@
 import json as _json
+import fnmatch as _fnmatch
 import os as _os
 import pathlib as _pathlib
 import queue as _q
@@ -10,6 +11,12 @@ _MAX_WORKERS = 32
 _IGNORE_DIRS = set()
 _SCAN_HIDDEN_DIRS = True
 _SCAN_HIDDEN_FILES = True
+
+_WILDCARD_CHARS = set("*?[")
+
+
+def _normalise(item: str) -> str:
+    return item if any(c in item for c in _WILDCARD_CHARS) else f"*{item}*"
 
 
 def _ignore_dir(path: str, name: str, ignore_dirs: set[str], scan_hidden: bool) -> bool:
@@ -34,19 +41,24 @@ def _should_consider_file(
     should_consider = True
 
     if search_file_names:
-        should_consider = False
-        for to_search in search_file_names:
-            if to_search.lower() in filename.lower():
-                should_consider = True
-                break
-        
+        should_consider = any(
+            _fnmatch.fnmatchcase(filename.casefold(), _normalise(to_search).casefold())
+            for to_search in search_file_names
+        )
+
         if not should_consider:
             return False
 
     if search_file_extensions:
         should_consider = False
         for ext in search_file_extensions:
-            if filename.lower().endswith("." + ext.lower()):
+            ext_lower = ext.lower()
+            filename_lower = filename.lower()
+
+            if ext_lower.startswith("."):
+                ext_lower = ext_lower.split(".")[1]
+
+            if filename_lower.endswith("." + ext_lower):
                 should_consider = True
                 break
 

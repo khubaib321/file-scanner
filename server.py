@@ -110,7 +110,8 @@ def deep_scan(config: ScanConfig) -> DeepScanResponse:
     Simply lists files and folder names found under the given directory.
 
     Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
-    """
+    """,
+    enabled=False,
 )
 def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
     print("=============================================")
@@ -135,7 +136,7 @@ def shallow_scan(config: ScanConfig) -> ShallowScanResponse:
 @mcp.tool(
     name="search-directory",
     description="""
-    Run a deep scan on the given directory and return files with given names or extensions.
+    Search for files with names and/or extensions in the target directory.
 
     Usage:
     search_directory(
