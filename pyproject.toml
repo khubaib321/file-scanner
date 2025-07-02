@@ -5,6 +5,7 @@ description = "Scan a directory. Discover files and folders 🤯"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.115.13",
     "fastmcp>=2.8.1",
     "mcpo>=0.0.15",
     "pydantic>=2.11.7",

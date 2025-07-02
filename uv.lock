@@ -220,6 +220,7 @@ name = "file-system-mcp"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "fastapi" },
     { name = "fastmcp" },
     { name = "mcpo" },
     { name = "pydantic" },
@@ -227,6 +228,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.13" },
     { name = "fastmcp", specifier = ">=2.8.1" },
     { name = "mcpo", specifier = ">=0.0.15" },
     { name = "pydantic", specifier = ">=2.11.7" },
