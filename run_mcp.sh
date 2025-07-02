@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-uv run server.py > logs/server.log &
+uv run mcp.py > logs/mcp.log &
 server_pid=$!
 
-echo "MCP server started [$server_pid]. Find logs in logs/server.log"
+echo "MCP server started [$server_pid]. Find logs in logs/mcp.log"
 
 cleanup() {
   echo "Shutting down MCP server [$server_pid]..."

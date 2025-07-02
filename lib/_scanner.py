@@ -14,6 +14,8 @@ _SCAN_HIDDEN_FILES = True
 
 _WILDCARD_CHARS = set("*?[")
 
+_DEEP_SCAN_CACHE: dict = {}
+
 
 def _normalise(item: str) -> str:
     return item if any(c in item for c in _WILDCARD_CHARS) else f"*{item}*"
@@ -213,11 +215,13 @@ class Scanner:
         if not directory.startswith("~"):
             if not directory.startswith("/"):
                 directory = "~/" + directory
+        
 
         self._root_path = _pathlib.Path(directory).expanduser()
         self._scan_result: dict[str, str | list[str] | dict] = {}
 
         self._gen_summary: bool = config.get("summarize", False)
+        self._enable_cache: bool = config.get("enable_cache", True)
         self._ignore_dirs: set[str] = config.get("ignore_dirs", _IGNORE_DIRS)
         self._output_file_name: str | None = config.get("output_file_name", None)
         self._scan_hidden_dirs: bool = config.get("scan_hidden_dirs", _SCAN_HIDDEN_DIRS)
@@ -255,7 +259,7 @@ class Scanner:
         return self._task_man.workers_deployed
 
     @_helpers.time_it()
-    def _scan_dir(self) -> None:
+    def _deep_scan_dir(self) -> None:
         if not (self._root_path.exists() and self._root_path.is_dir()):
             self._scan_result = {
                 "__path__": str(self._root_path),
@@ -314,7 +318,7 @@ class Scanner:
     
     def deep_scan(self):
         print("⏳ Deep scan", str(self._root_path), flush=True)
-        self._scan_dir()
+        self._deep_scan_dir()
 
         if self._output_file_name:
             _os.makedirs("outputs", exist_ok=True)

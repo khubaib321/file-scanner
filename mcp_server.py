@@ -1,7 +1,7 @@
 import lib as _lib
+import asyncio as _asyncio
 import fastmcp as _fastmcp
 import pydantic as _pydantic
-import asyncio as _asyncio
 
 
 _IGNORE_DIRS = set([
@@ -14,6 +14,9 @@ _IGNORE_DIRS = set([
     "_credintials",
     "legacy_credentials",
 ])
+
+
+mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 
 class ScanConfig(_pydantic.BaseModel):
@@ -47,9 +50,6 @@ class SearchScanResponse(_pydantic.BaseModel):
 class GetFileContentsResponse(_pydantic.BaseModel):
     error: str | None
     lines: list[str]
-
-
-mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 
 @mcp.tool(
