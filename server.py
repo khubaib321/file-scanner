@@ -4,7 +4,7 @@ import fastapi.middleware.gzip as _gzip_middleware
 import pydantic as _pydantic
 import uvicorn as _uvicorn
 
-app = _fastapi.FastAPI()
+app = _fastapi.FastAPI(docs_url=None, redoc_url=None)
 app.add_middleware(_gzip_middleware.GZipMiddleware, minimum_size=1_000)
 
 
@@ -138,7 +138,7 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
     "/fs/search-directory/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
-def search_directory(data: SearchScanConfig):
+async def search_directory(data: SearchScanConfig):
     """
     Search for files with names and/or extensions in the target directory.
 
@@ -186,7 +186,7 @@ def search_directory(data: SearchScanConfig):
     "/fs/get-file-contents/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
-def get_file_contents(path: str) -> GetFileContentsResponse:
+async def get_file_contents(path: str) -> GetFileContentsResponse:
     """
     Read the given file and return its content.
 
@@ -200,6 +200,33 @@ def get_file_contents(path: str) -> GetFileContentsResponse:
     return GetFileContentsResponse(
         lines=result.lines,
         error=result.error,
+    )
+
+
+@app.get("/docs", include_in_schema=False)
+async def api_docs(request: _fastapi.Request):
+    return _fastapi.responses.HTMLResponse(
+        """
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <title>Elements in HTML</title>
+
+            <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
+            <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
+        </head>
+        <body>
+
+            <elements-api
+            apiDescriptionUrl="openapi.json"
+            router="hash"
+            />
+
+        </body>
+        </html>
+        """
     )
 
 

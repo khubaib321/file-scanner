@@ -20,9 +20,13 @@ _IGNORE_DIRS = set([
 mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 
-class LANAddress(str, _enum.Enum):
+class LANAddress(_enum.Enum):
     MACBOOK_AIR = "khubaibs-macbook-air.local", "MacBook Air"
-    MACBOOK_PRO = "khubaibs-macbook-pro.local", "MacBook Pro"
+    MACBOOK_PRO = "macbook-pro-muhammad-khubaib-afzal.local", "MacBook Pro"
+
+    def __init__(self, hostname, label):
+        self.label = label
+        self._value_ = hostname
 
 
 class LANFileSystemServer:
@@ -39,7 +43,7 @@ class LANFileSystemAPI:
     @classmethod
     def _base_url(cls, target: LANAddress) -> str:
         return (
-            "http://" + target + 
+            "http://" + target.value + 
             f":{LANFileSystemServer.port}" + LANFileSystemServer.path
         )
 
