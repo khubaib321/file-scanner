@@ -42,6 +42,8 @@ class GetFileContentsResponse(_pydantic.BaseModel):
     description="""
     Search for files with names and/or extensions in the target directory.
 
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
+
     Usage:
     search_directory(
         ScanConfig(
@@ -88,7 +90,7 @@ def search_directory(config: ScanConfig):
     description="""
     Read the given file and return its content.
 
-    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
     """
 )
 def get_file_contents(path: str) -> GetFileContentsResponse:

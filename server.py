@@ -78,7 +78,7 @@ async def deep_scan(data: ScanConfig) -> DeepScanResponse:
         )
     )
 
-    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
     Use with caution. This method can return substantially large amount of nested contents when 
     called on directories high up in the hierarchy. The response may not fit in the model's context window.
     """
@@ -115,7 +115,7 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
     Run a shallow scan only on the given directory.
     Simply lists files and folder names found under the given directory.
 
-    Note: To avoid unknown username related issues, relative paths starting with "~" can be used.
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
     """
     print("=============================================")
     print("shallow_scan:", data.path, flush=True)
@@ -139,6 +139,22 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
     status_code=_fastapi.status.HTTP_200_OK,
 )
 def search_directory(data: SearchScanConfig):
+    """
+    Search for files with names and/or extensions in the target directory.
+
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
+
+    Usage:
+    search_directory(
+        ScanConfig(
+            path="~",
+            scan_hidden_dirs=True,
+            scan_hidden_files=True,
+            search_file_names=set(["dog"]),
+            search_file_extensions=set(["png"]),
+        )
+    )
+    """
     print("=============================================")
     print("search_directory:", data.path, flush=True)
 
@@ -171,6 +187,11 @@ def search_directory(data: SearchScanConfig):
     status_code=_fastapi.status.HTTP_200_OK,
 )
 def get_file_contents(path: str) -> GetFileContentsResponse:
+    """
+    Read the given file and return its content.
+
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
+    """
     print("=============================================")
     print("get_file_contents:", path, flush=True)
 
