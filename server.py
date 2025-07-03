@@ -27,6 +27,11 @@ class ScanConfig(_pydantic.BaseModel):
     scan_hidden_files: bool = True
 
 
+class SearchScanConfig(ScanConfig):
+    search_file_names: set[str] | None = None
+    search_file_extensions: set[str] | None = None
+
+
 class _DeepScanSummary(_pydantic.BaseModel):
     dir_count: int
     file_count: int
@@ -133,19 +138,19 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
     "/fs/search-directory/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
-def search_directory(config: ScanConfig):
+def search_directory(data: SearchScanConfig):
     print("=============================================")
-    print("search_directory:", config.path, flush=True)
+    print("search_directory:", data.path, flush=True)
 
     scanner = _lib.Scanner(
-        directory=config.path,
+        directory=data.path,
         config={
             "summarize": True,
             "ignore_dirs": _IGNORE_DIRS,
-            "scan_hidden_dirs": config.scan_hidden_dirs,
-            "scan_hidden_files": config.scan_hidden_files,
-            "search_file_names": config.search_file_names,
-            "search_file_extensions": config.search_file_extensions,
+            "scan_hidden_dirs": data.scan_hidden_dirs,
+            "scan_hidden_files": data.scan_hidden_files,
+            "search_file_names": data.search_file_names,
+            "search_file_extensions": data.search_file_extensions,
         },
     )
 
