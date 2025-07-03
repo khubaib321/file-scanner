@@ -42,6 +42,16 @@ class ShallowScanResponse(_pydantic.BaseModel):
     result: dict[str, str | list[str]]
 
 
+class SearchScanResponse(_pydantic.BaseModel):
+    count: int
+    result: dict[str, list[str]]
+
+
+class GetFileContentsResponse(_pydantic.BaseModel):
+    error: str | None
+    lines: list[str]
+
+
 @app.post(
     "/fs/deep-scan/",
     status_code=_fastapi.status.HTTP_200_OK,
@@ -116,6 +126,54 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
 
     return ShallowScanResponse(
         result=scanner.shallow_scan()
+    )
+
+
+@app.post(
+    "/fs/search-directory/",
+    status_code=_fastapi.status.HTTP_200_OK,
+)
+def search_directory(config: ScanConfig):
+    print("=============================================")
+    print("search_directory:", config.path, flush=True)
+
+    scanner = _lib.Scanner(
+        directory=config.path,
+        config={
+            "summarize": True,
+            "ignore_dirs": _IGNORE_DIRS,
+            "scan_hidden_dirs": config.scan_hidden_dirs,
+            "scan_hidden_files": config.scan_hidden_files,
+            "search_file_names": config.search_file_names,
+            "search_file_extensions": config.search_file_extensions,
+        },
+    )
+
+    count: int = 0
+    search_result = scanner.search_scan()
+
+    for files in search_result.values():
+        count += len(files)
+    
+    return SearchScanResponse(
+        count=count,
+        result=search_result
+    )
+
+
+@app.post(
+    "/fs/get-file-contents/",
+    status_code=_fastapi.status.HTTP_200_OK,
+)
+def get_file_contents(path: str) -> GetFileContentsResponse:
+    print("=============================================")
+    print("get_file_contents:", path, flush=True)
+
+    result = _lib.get_file_contents(path)
+
+    return GetFileContentsResponse(
+        lines=result.lines,
+        error=result.error,
     )
 
 
