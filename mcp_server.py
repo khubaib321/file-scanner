@@ -3,6 +3,7 @@ import enum as _enum
 import asyncio as _asyncio
 import fastmcp as _fastmcp
 import pydantic as _pydantic
+import server as _server
 
 
 _IGNORE_DIRS = set([
@@ -29,11 +30,6 @@ class LANAddress(_enum.Enum):
         self._value_ = hostname
 
 
-class LANFileSystemServer:
-    port: int = 10000
-    path: str = "/fs"
-
-
 class LANFileSystemAPI:
     deep_scan: str = "/deep_scan/"
     shallow_scan: str = "/shallow_scan/"
@@ -44,7 +40,7 @@ class LANFileSystemAPI:
     def _base_url(cls, target: LANAddress) -> str:
         return (
             "http://" + target.value + 
-            f":{LANFileSystemServer.port}" + LANFileSystemServer.path
+            f":{_server.PORT}" + _server.PATH
         )
 
     @classmethod

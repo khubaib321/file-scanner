@@ -4,7 +4,10 @@ import fastapi.middleware.gzip as _gzip_middleware
 import pydantic as _pydantic
 import uvicorn as _uvicorn
 
-app = _fastapi.FastAPI(docs_url=None, redoc_url=None)
+PATH = "/fs"
+PORT = 10000
+
+app = _fastapi.FastAPI(docs_url=None, redoc_url=None, root_path=PATH)
 app.add_middleware(_gzip_middleware.GZipMiddleware, minimum_size=1_000)
 
 
@@ -58,7 +61,7 @@ class GetFileContentsResponse(_pydantic.BaseModel):
 
 
 @app.post(
-    "/fs/deep-scan/",
+    "/deep-scan/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
 async def deep_scan(data: ScanConfig) -> DeepScanResponse:
@@ -107,7 +110,7 @@ async def deep_scan(data: ScanConfig) -> DeepScanResponse:
 
 
 @app.post(
-    "/fs/shallow-scan/",
+    "/shallow-scan/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
 async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
@@ -135,7 +138,7 @@ async def shallow_scan(data: ScanConfig) -> ShallowScanResponse:
 
 
 @app.post(
-    "/fs/search-directory/",
+    "/search-directory/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
 async def search_directory(data: SearchScanConfig):
@@ -183,7 +186,7 @@ async def search_directory(data: SearchScanConfig):
 
 
 @app.post(
-    "/fs/get-file-contents/",
+    "/get-file-contents/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
 async def get_file_contents(path: str) -> GetFileContentsResponse:
@@ -233,6 +236,6 @@ async def api_docs(request: _fastapi.Request):
 if __name__ == "__main__":
     _uvicorn.run(
         app=app,
-        port=10000,
+        port=PORT,
         host="0.0.0.0",
     )
