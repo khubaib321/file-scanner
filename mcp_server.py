@@ -1,4 +1,5 @@
 import lib as _lib
+import enum as _enum
 import asyncio as _asyncio
 import fastmcp as _fastmcp
 import pydantic as _pydantic
@@ -17,6 +18,38 @@ _IGNORE_DIRS = set([
 
 
 mcp = _fastmcp.FastMCP("MacOS file system tools")
+
+
+class LANAddress(str, _enum.Enum):
+    MACBOOK_AIR = "khubaibs-macbook-air.local", "MacBook Air"
+    MACBOOK_PRO = "khubaibs-macbook-pro.local", "MacBook Pro"
+
+
+class LANFileSystemServer:
+    port: int = 10000
+    path: str = "/fs"
+
+
+class LANFileSystemAPI:
+    deep_scan: str = "/deep_scan/"
+    shallow_scan: str = "/shallow_scan/"
+    search_directory: str = "/search-directory/"
+    get_file_contents: str = "/get-file-contents/"
+
+    @classmethod
+    def _base_url(cls, target: LANAddress) -> str:
+        return (
+            "http://" + target + 
+            f":{LANFileSystemServer.port}" + LANFileSystemServer.path
+        )
+
+    @classmethod
+    def search_directory_url(cls, target: LANAddress) -> str:
+        return cls._base_url(target) + cls.search_directory
+    
+    @classmethod
+    def get_file_contents_url(cls, target: LANAddress) -> str:
+        return cls._base_url(target) + cls.get_file_contents
 
 
 class ScanConfig(_pydantic.BaseModel):
