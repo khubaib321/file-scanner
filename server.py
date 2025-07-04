@@ -60,6 +60,11 @@ class GetFileContentsResponse(_pydantic.BaseModel):
     lines: list[str]
 
 
+@app.get("/health/")
+async def health() -> dict:
+    return {"status": "ok"}
+
+
 @app.post(
     "/deep-scan/",
     status_code=_fastapi.status.HTTP_200_OK,

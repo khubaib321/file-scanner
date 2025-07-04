@@ -23,7 +23,7 @@ mcp = _fastmcp.FastMCP("MacOS file system tools")
 
 class LANAddress(_enum.Enum):
     MACBOOK_AIR = "khubaibs-macbook-air.local", "MacBook Air"
-    MACBOOK_PRO = "macbook-pro-muhammad-khubaib-afzal.local", "MacBook Pro"
+    MACBOOK_PRO = "khubaibs-macbook-pro.local", "MacBook Pro"
 
     def __init__(self, hostname, label):
         self.label = label
@@ -66,8 +66,8 @@ class SearchScanResponse(_pydantic.BaseModel):
 
 
 class GetFileContentsResponse(_pydantic.BaseModel):
-    error: str | None
     lines: list[str]
+    error: str | None
 
 
 @mcp.tool(
