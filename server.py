@@ -200,8 +200,16 @@ async def search_directory(data: SearchScanConfig):
     "/search-directory-lan/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
-async def search_directory_lan(config: SearchScanConfig) -> SearchScanLanResponse:
-    payload = config.model_dump(mode="json")
+async def search_directory_lan(data: SearchScanConfig) -> SearchScanLanResponse:
+    """
+    Search for files with names and/or extensions in connected LAN systems.
+
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
+    """
+    print("=============================================")
+    print("search_directory_lan:", data.path, flush=True)
+
+    payload = data.model_dump(mode="json")
     host_results: dict[str, SearchScanResponse] = {}
 
     async with _aiohttp.ClientSession() as session:
