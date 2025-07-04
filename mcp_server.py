@@ -43,7 +43,7 @@ class LANFileSystemAPI:
         return cls._base_url(target) + cls.get_file_contents
 
 
-class ScanConfig(_pydantic.BaseModel):
+class SearchScanConfig(_pydantic.BaseModel):
     path: str
     scan_hidden_dirs: bool = False
     scan_hidden_files: bool = True
@@ -71,20 +71,9 @@ class GetFileContentsResponse(_pydantic.BaseModel):
     Search for files with names and/or extensions in the target directory.
 
     Note: To avoid username related issues, relative paths starting with "~" should be used.
-
-    Usage:
-    search_directory(
-        ScanConfig(
-            path="~",
-            scan_hidden_dirs=True,
-            scan_hidden_files=True,
-            search_file_names=set(["dog"]),
-            search_file_extensions=set(["png"]),
-        )
-    )
     """
 )
-def search_directory(config: ScanConfig):
+def search_directory(config: SearchScanConfig):
     print("=============================================")
     print("search_directory:", config.path, flush=True)
 
@@ -120,7 +109,7 @@ def search_directory(config: ScanConfig):
     Note: To avoid username related issues, relative paths starting with "~" should be used.
     """
 )
-async def search_directory_lan(config: ScanConfig) -> SearchScanLanResponse:
+async def search_directory_lan(config: SearchScanConfig) -> SearchScanLanResponse:
     print("=============================================")
     print("search_directory_lan:", config.path, flush=True)
 

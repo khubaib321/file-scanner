@@ -200,7 +200,7 @@ async def search_directory(data: SearchScanConfig):
     "/search-directory-lan/",
     status_code=_fastapi.status.HTTP_200_OK,
 )
-async def search_directory_lan(config: ScanConfig) -> SearchScanLanResponse:
+async def search_directory_lan(config: SearchScanConfig) -> SearchScanLanResponse:
     payload = config.model_dump(mode="json")
     host_results: dict[str, SearchScanResponse] = {}
 
