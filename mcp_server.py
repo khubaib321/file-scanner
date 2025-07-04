@@ -121,6 +121,9 @@ def search_directory(config: ScanConfig):
     """
 )
 async def search_directory_lan(config: ScanConfig) -> SearchScanLanResponse:
+    print("=============================================")
+    print("search_directory_lan:", config.path, flush=True)
+
     payload = config.model_dump(mode="json")
     host_results: dict[str, SearchScanResponse] = {}
 

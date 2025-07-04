@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Discover Uvicorn servers publishing a /health endpoint on port 10000
-across every IPv4 subnet the current machine is attached to.
-
-Dependencies:
-    pip install netifaces aiohttp
-"""
-
-from __future__ import annotations
-
 import asyncio as _asyncio
 import ipaddress as _ipaddress
 import contextlib as _contextlib
