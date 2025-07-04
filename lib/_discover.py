@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio as _asyncio
 import ipaddress as _ipaddress
 import contextlib as _contextlib
+import socket as _socket
 from typing import Final, Iterable
 
 import aiohttp as _aiohttp
@@ -24,6 +25,15 @@ TIMEOUT_S: Final[float] = 0.3
 MAX_CONNS: Final[int] = 256
 
 
+async def _reverse_lookup(ip: str) -> str | None:
+    try:
+        hostname, _ = await _asyncio.get_running_loop().getnameinfo((ip, 0), flags=0)
+        return hostname
+    except _socket.gaierror as e:
+        print("⚠️ Reverse lookup failed:", str(e), flush=True)
+        return None
+
+
 async def _is_healthy(
     ip: str,
     *,
@@ -34,39 +44,32 @@ async def _is_healthy(
 
     try:
         async with session.get(url, timeout=_aiohttp.ClientTimeout(TIMEOUT_S)) as resp:
-            if resp.status == 200:
-                print("🟢 File-system server discovered:", url, flush=True)
-                return True
-            else:
-                return False
+            return resp.status == 200
 
     except (_aiohttp.ClientError, _asyncio.TimeoutError):
         return False
 
 
-def _local_ipv4_networks() -> list[_ipaddress.IPv4Network]:
-    nets: list[_ipaddress.IPv4Network] = []
+def _local_ipv4_networks() -> set[_ipaddress.IPv4Network]:
+    nets: set[_ipaddress.IPv4Network] = set()
+
     for iface in _netifaces.interfaces():
         with _contextlib.suppress(KeyError, ValueError):
             info = _netifaces.ifaddresses(iface)[_netifaces.AF_INET][0]
-            ip_str: str   = info["addr"]
-            mask_str: str = info["netmask"]
+            ip   = _ipaddress.IPv4Address(info["addr"])
+            mask = _ipaddress.IPv4Address(info["netmask"])
 
-            ip   = _ipaddress.IPv4Address(ip_str)
-            mask = _ipaddress.IPv4Address(mask_str)
-            net  = _ipaddress.IPv4Network(f"{ip}/{mask}", strict=False)
-
-            # Skip unwanted ranges.
             if (
                 ip.is_loopback
                 or ip.is_link_local
                 or ip.is_multicast
                 or ip.is_unspecified
-                or not ip.is_private # ignore public/WAN addrs
+                or not ip.is_private
             ):
                 continue
 
-            nets.append(net)
+            nets.add(_ipaddress.IPv4Network(f"{ip}/{mask}", strict=False))
+
     return nets
 
 
@@ -75,14 +78,16 @@ async def _scan_network(
     *,
     session: _aiohttp.ClientSession,
     semaphore: _asyncio.Semaphore,
-    hits: list[str],
+    hits: set[str],
 ) -> None:
     print("👀 Scanning network:", str(network), flush=True)
 
     async def probe(ip: _ipaddress.IPv4Address) -> None:
         async with semaphore:
             if await _is_healthy(str(ip), session=session):
-                hits.append(str(ip))
+                hostname = await _reverse_lookup(str(ip))
+                print("🟢 File-system server discovered:", f"{str(ip)} -> {hostname}", flush=True)
+                hits.add(hostname or str(ip))
 
     tasks: Iterable[_asyncio.Task[None]] = (
         _asyncio.create_task(probe(ip)) for ip in network.hosts()
@@ -90,16 +95,16 @@ async def _scan_network(
     await _asyncio.gather(*tasks)
 
 
-async def _discover() -> list[str]:
-    subnets: list[_ipaddress.IPv4Network] = _local_ipv4_networks()
+async def _discover() -> set[str]:
+    subnets: set[_ipaddress.IPv4Network] = _local_ipv4_networks()
     
     if not subnets:
         print("❌ No File system servers detected.", flush=True)
-        return []
+        return set()
     else:
-        print("🔎 Found", len(subnets), "subnets to scan.")
+        print("🔎 Found", len(subnets), "subnets to scan.", flush=True)
 
-    found: list[str] = []
+    found: set[str] = set()
     semaphore = _asyncio.Semaphore(MAX_CONNS)
 
     async with _aiohttp.ClientSession() as session:
@@ -111,8 +116,8 @@ async def _discover() -> list[str]:
     return found
 
 
-def discover() -> list[str]:
-    ips: list[str] = _asyncio.run(_discover())
+def discover() -> set[str]:
+    ips: set[str] = _asyncio.run(_discover())
 
     if not ips:
         print("🔴 No File-system servers discovered.", flush=True)

@@ -1,4 +1,6 @@
 import lib as _lib
+import aiohttp as _aiohttp
+import asyncio as _asyncio
 import fastapi as _fastapi
 import fastapi.middleware.gzip as _gzip_middleware
 import pydantic as _pydantic
@@ -22,6 +24,7 @@ _IGNORE_DIRS = set([
     "_credintials",
     "legacy_credentials",
 ])
+_LAN_FILE_SYSTEM_SERVERS: set[str] = set()
 
 
 class ScanConfig(_pydantic.BaseModel):
@@ -55,9 +58,34 @@ class SearchScanResponse(_pydantic.BaseModel):
     result: dict[str, list[str]]
 
 
+class SearchScanLanResponse(_pydantic.BaseModel):
+    results: dict[str, SearchScanResponse]
+
+
 class GetFileContentsResponse(_pydantic.BaseModel):
     error: str | None
     lines: list[str]
+
+
+class LANFileSystemAPI:
+    deep_scan: str = "/deep_scan/"
+    shallow_scan: str = "/shallow_scan/"
+    search_directory: str = "/search-directory/"
+    get_file_contents: str = "/get-file-contents/"
+
+    @classmethod
+    def _base_url(cls, target: str) -> str:
+        return (
+            "http://" + target + f":{PORT}" + PATH
+        )
+
+    @classmethod
+    def search_directory_url(cls, target: str) -> str:
+        return cls._base_url(target) + cls.search_directory
+    
+    @classmethod
+    def get_file_contents_url(cls, target: str) -> str:
+        return cls._base_url(target) + cls.get_file_contents
 
 
 @app.get("/health/")
@@ -74,17 +102,6 @@ async def deep_scan(data: ScanConfig) -> DeepScanResponse:
     Run a deep scan on the given directory and all sub-directories.
     Returns scan results as a mapping of directory name(s) to its contents.
     A quick summary of the scan is also included in the returned dictionary.
-
-    Usage:
-    deep_scan(
-        ScanConfig(
-            path="~",
-            scan_hidden_dirs=True,
-            scan_hidden_files=True,
-            search_file_names=set(["dog"]),
-            search_file_extensions=set(["png"]),
-        )
-    )
 
     Note: To avoid username related issues, relative paths starting with "~" should be used.
     Use with caution. This method can return substantially large amount of nested contents when 
@@ -151,17 +168,6 @@ async def search_directory(data: SearchScanConfig):
     Search for files with names and/or extensions in the target directory.
 
     Note: To avoid username related issues, relative paths starting with "~" should be used.
-
-    Usage:
-    search_directory(
-        ScanConfig(
-            path="~",
-            scan_hidden_dirs=True,
-            scan_hidden_files=True,
-            search_file_names=set(["dog"]),
-            search_file_extensions=set(["png"]),
-        )
-    )
     """
     print("=============================================")
     print("search_directory:", data.path, flush=True)
@@ -188,6 +194,47 @@ async def search_directory(data: SearchScanConfig):
         count=count,
         result=search_result
     )
+
+
+@app.post(
+    "/search-directory-lan/",
+    status_code=_fastapi.status.HTTP_200_OK,
+)
+async def search_directory_lan(config: ScanConfig) -> SearchScanLanResponse:
+    payload = config.model_dump(mode="json")
+    host_results: dict[str, SearchScanResponse] = {}
+
+    async with _aiohttp.ClientSession() as session:
+        async def _fetch(server: str) -> tuple[str, SearchScanResponse]:
+            url = LANFileSystemAPI.search_directory_url(server)
+
+            try:
+                async with session.post(url, json=payload) as resp:
+                    data = await resp.json()
+                    return (
+                        server,
+                        SearchScanResponse(count=data["count"], result=data["result"])
+                    )
+
+            except Exception as exc:
+                return (
+                    server,
+                    SearchScanResponse(count=0, result={"__error__": [str(exc)]})
+                )
+
+        results = await _asyncio.gather(
+            *(_fetch(s) for s in _LAN_FILE_SYSTEM_SERVERS),
+            return_exceptions=True
+        )
+
+    for item in results:
+        if isinstance(item, BaseException):
+            continue
+
+        server, response = item
+        host_results[server] = response
+
+    return SearchScanLanResponse(results=host_results)
 
 
 @app.post(
@@ -239,6 +286,8 @@ async def api_docs(request: _fastapi.Request):
 
 
 if __name__ == "__main__":
+    _LAN_FILE_SYSTEM_SERVERS = _lib.discover_lan_file_system_servers()
+
     _uvicorn.run(
         app=app,
         port=PORT,

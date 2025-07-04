@@ -1,5 +1,5 @@
 import lib as _lib
-import enum as _enum
+import aiohttp as _aiohttp
 import asyncio as _asyncio
 import fastmcp as _fastmcp
 import pydantic as _pydantic
@@ -16,18 +16,10 @@ _IGNORE_DIRS = set([
     "_credintials",
     "legacy_credentials",
 ])
+_LAN_FILE_SYSTEM_SERVERS: set[str] = _lib.discover_lan_file_system_servers()
 
 
 mcp = _fastmcp.FastMCP("MacOS file system tools")
-
-
-class LANAddress(_enum.Enum):
-    MACBOOK_AIR = "khubaibs-macbook-air.local", "MacBook Air"
-    MACBOOK_PRO = "khubaibs-macbook-pro.local", "MacBook Pro"
-
-    def __init__(self, hostname, label):
-        self.label = label
-        self._value_ = hostname
 
 
 class LANFileSystemAPI:
@@ -37,18 +29,17 @@ class LANFileSystemAPI:
     get_file_contents: str = "/get-file-contents/"
 
     @classmethod
-    def _base_url(cls, target: LANAddress) -> str:
+    def _base_url(cls, target: str) -> str:
         return (
-            "http://" + target.value + 
-            f":{_server.PORT}" + _server.PATH
+            "http://" + target + f":{_server.PORT}" + _server.PATH
         )
 
     @classmethod
-    def search_directory_url(cls, target: LANAddress) -> str:
+    def search_directory_url(cls, target: str) -> str:
         return cls._base_url(target) + cls.search_directory
     
     @classmethod
-    def get_file_contents_url(cls, target: LANAddress) -> str:
+    def get_file_contents_url(cls, target: str) -> str:
         return cls._base_url(target) + cls.get_file_contents
 
 
@@ -63,6 +54,10 @@ class ScanConfig(_pydantic.BaseModel):
 class SearchScanResponse(_pydantic.BaseModel):
     count: int
     result: dict[str, list[str]]
+
+
+class SearchScanLanResponse(_pydantic.BaseModel):
+    results: dict[str, SearchScanResponse]
 
 
 class GetFileContentsResponse(_pydantic.BaseModel):
@@ -116,6 +111,50 @@ def search_directory(config: ScanConfig):
         result=search_result
     )
 
+
+@mcp.tool(
+    name="search-directory-lan",
+    description="""
+    Search for files with names and/or extensions in connected LAN systems.
+
+    Note: To avoid username related issues, relative paths starting with "~" should be used.
+    """
+)
+async def search_directory_lan(config: ScanConfig) -> SearchScanLanResponse:
+    payload = config.model_dump(mode="json")
+    host_results: dict[str, SearchScanResponse] = {}
+
+    async with _aiohttp.ClientSession() as session:
+        async def _fetch(server: str) -> tuple[str, SearchScanResponse]:
+            url = LANFileSystemAPI.search_directory_url(server)
+
+            try:
+                async with session.post(url, json=payload) as resp:
+                    data = await resp.json()
+                    return (
+                        server,
+                        SearchScanResponse(count=data["count"], result=data["result"])
+                    )
+
+            except Exception as exc:
+                return (
+                    server,
+                    SearchScanResponse(count=0, result={"__error__": [str(exc)]})
+                )
+
+        results = await _asyncio.gather(
+            *(_fetch(s) for s in _LAN_FILE_SYSTEM_SERVERS),
+            return_exceptions=True
+        )
+
+    for item in results:
+        if isinstance(item, BaseException):
+            continue
+
+        server, response = item
+        host_results[server] = response
+
+    return SearchScanLanResponse(results=host_results)
 
 
 @mcp.tool(
